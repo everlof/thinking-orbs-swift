@@ -6,6 +6,8 @@ engine (projection, depth shading, hashes, and all hand-tuned presets) is
 ported 1:1 from the original TypeScript canvas implementation, rendered with
 `Canvas` + `TimelineView`.
 
+![All six states at both sizes, light and dark](docs/orbs.png)
+
 ## States
 
 | State | Animation |
