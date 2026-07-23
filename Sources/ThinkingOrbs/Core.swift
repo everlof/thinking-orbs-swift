@@ -1,10 +1,15 @@
 // Shared primitives for the dotted 3D thought-orbs. Ported from
 // thinking-orbs (github.com/Jakubantalik/thinking-orbs): honestly 3D —
 // rotated, depth-shaded, z-sorted. Depth is carried by dot size and ink
-// weight alone. Plain circle fills only, drawn into a SwiftUI
-// GraphicsContext.
+// weight alone. Plain circle fills only, drawn into a CGContext so the
+// same engine serves both the SwiftUI and AppKit front ends.
 
-import SwiftUI
+import CoreGraphics
+import Foundation
+
+/// Shared epoch so simultaneously mounted orbs animate in phase,
+/// whichever front end hosts them.
+let orbEpoch = Date()
 
 struct Dot {
     var x: Double
@@ -56,15 +61,15 @@ func makeProj(yaw: Double, tilt: Double, cx: Double, cy: Double, scale: Double) 
 /// Painter: z-sort far→near, matte grayscale dots. On dark substrates the
 /// ink value is mirrored (1 - white) so near dots read bright — the same
 /// depth language on an inverted substrate.
-func paint(_ ctx: inout GraphicsContext, _ dots: inout [Dot], dark: Bool, rMin: Double = 0.3) {
+func paint(_ cg: CGContext, _ dots: inout [Dot], dark: Bool, rMin: Double = 0.3) {
     dots.sort { $0.z < $1.z }
     for d in dots {
         if d.a < 0.02 { continue }
         let w = min(1, max(0, d.white))
         let g = dark ? 1 - w : w
+        cg.setFillColor(CGColor(srgbRed: g, green: g, blue: g, alpha: d.a))
         let r = max(rMin, d.r)
-        let rect = CGRect(x: d.x - r, y: d.y - r, width: r * 2, height: r * 2)
-        ctx.fill(Path(ellipseIn: rect), with: .color(Color(.sRGB, white: g, opacity: d.a)))
+        cg.fillEllipse(in: CGRect(x: d.x - r, y: d.y - r, width: r * 2, height: r * 2))
     }
 }
 

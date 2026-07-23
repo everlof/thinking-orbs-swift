@@ -1,10 +1,12 @@
 # ThinkingOrbs (Swift)
 
-A SwiftUI port of [thinking-orbs](https://github.com/Jakubantalik/thinking-orbs) —
-dotted thought-orb loading indicators for AI / agent interfaces. The particle
-engine (projection, depth shading, hashes, and all hand-tuned presets) is
-ported 1:1 from the original TypeScript canvas implementation, rendered with
-`Canvas` + `TimelineView`.
+A Swift port of [thinking-orbs](https://github.com/Jakubantalik/thinking-orbs) —
+dotted thought-orb loading indicators for AI / agent interfaces, with both
+SwiftUI and AppKit front ends. The particle engine (projection, depth
+shading, hashes, and all hand-tuned presets) is ported 1:1 from the original
+TypeScript canvas implementation and draws into a `CGContext`, so both front
+ends render identical frames: SwiftUI via `Canvas` + `TimelineView`, AppKit
+via an `NSView` driven by a display link.
 
 ![All six states at both sizes, light and dark](docs/orbs.png)
 
@@ -39,9 +41,24 @@ light renders dark ink. The canvas background is transparent.
 `ThinkingOrbFrame(state:size:theme:time:)` renders one deterministic frame,
 for previews, snapshot tests or widgets.
 
-Faithful to the original's behavior: all mounted orbs share one clock and stay
-in phase, and Reduce Motion shows a static representative frame that still
-follows the live theme. Requires iOS 15+ / macOS 13+.
+### AppKit
+
+```swift
+let orb = ThinkingOrbView(state: .working)              // 64pt orb
+let inline = ThinkingOrbView(state: .searching, orbSize: .px20)
+orb.speed = 1.5
+orb.paused = true
+```
+
+`ThinkingOrbView` sizes itself via `intrinsicContentSize` (centering the orb
+if given a larger frame), follows `effectiveAppearance` when `theme` is
+`.auto`, and stops its display link automatically while windowless, hidden or
+in a fully occluded window.
+
+Faithful to the original's behavior: all mounted orbs — SwiftUI and AppKit
+alike — share one clock and stay in phase, and Reduce Motion shows a static
+representative frame that still follows the live theme. Requires iOS 15+ /
+macOS 13+ (SwiftUI); the AppKit view is macOS-only.
 
 ## Demo
 

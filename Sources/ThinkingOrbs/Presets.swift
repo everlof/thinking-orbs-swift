@@ -2,7 +2,8 @@
 // upstream tuning session. `count`/`size` are multipliers over the base
 // fine profiles; `speed` multiplies the shared clock.
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
 /// The six shipped states — each a hand-tuned animation:
 /// - `working`   — particles on tilted orbits
@@ -59,7 +60,7 @@ enum ModeKey: String {
     }
 }
 
-typealias ModeDraw = (inout GraphicsContext, _ size: Double, _ t: Double, _ dark: Bool, _ o: ModeOpts) -> Void
+typealias ModeDraw = (_ cg: CGContext, _ size: Double, _ t: Double, _ dark: Bool, _ o: ModeOpts) -> Void
 
 let stateToMode: [OrbState: ModeKey] = [
     .working: .orbits,

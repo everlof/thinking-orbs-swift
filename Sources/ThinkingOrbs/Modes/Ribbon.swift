@@ -2,7 +2,8 @@
 // the "composing" state. The tuned preset freezes the 3D tumble
 // (spin 0), leaving the traveling undulation on a fixed band.
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
 let drawRibbon: ModeDraw = { ctx, size, t, dark, o in
     let cx = size / 2
@@ -64,5 +65,5 @@ let drawRibbon: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(&ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
 }

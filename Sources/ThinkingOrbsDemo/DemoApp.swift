@@ -17,6 +17,10 @@ enum Main {
             renderSnapshot(to: args[i + 1])
             return
         }
+        if let i = args.firstIndex(of: "--snapshot-appkit"), args.count > i + 1 {
+            renderAppKitSnapshot(to: args[i + 1])
+            return
+        }
         DemoApp.main()
     }
 }
@@ -38,6 +42,25 @@ struct DemoApp: App {
     }
 }
 
+/// Hosts the AppKit ThinkingOrbView inside the SwiftUI demo grid.
+struct AppKitOrb: NSViewRepresentable {
+    var state: OrbState
+    var size: OrbSize = .px64
+    var speed: Double = 1
+    var paused: Bool = false
+
+    func makeNSView(context: Context) -> ThinkingOrbView {
+        ThinkingOrbView(state: state, orbSize: size, speed: speed, paused: paused)
+    }
+
+    func updateNSView(_ view: ThinkingOrbView, context: Context) {
+        view.state = state
+        view.orbSize = size
+        view.speed = speed
+        view.paused = paused
+    }
+}
+
 struct DemoView: View {
     @State private var dark = true
     @State private var speed = 1.0
@@ -46,10 +69,22 @@ struct DemoView: View {
     var body: some View {
         VStack(spacing: 28) {
             Grid(horizontalSpacing: 36, verticalSpacing: 24) {
+                GridRow {
+                    ForEach(["SwiftUI", "AppKit", "SwiftUI", "AppKit"], id: \.self) { caption in
+                        Text(caption)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    Color.clear.frame(width: 1, height: 1)
+                }
                 ForEach(OrbState.allCases, id: \.self) { state in
                     GridRow {
                         ThinkingOrb(state: state, speed: speed, paused: paused)
+                        AppKitOrb(state: state, speed: speed, paused: paused)
+                            .frame(width: 64, height: 64)
                         ThinkingOrb(state: state, size: .px20, speed: speed, paused: paused)
+                        AppKitOrb(state: state, size: .px20, speed: speed, paused: paused)
+                            .frame(width: 20, height: 20)
                         Text(state.label)
                             .font(.system(size: 14, weight: .medium, design: .monospaced))
                             .gridColumnAlignment(.leading)
@@ -128,6 +163,52 @@ private func renderSnapshot(to path: String) {
         FileHandle.standardError.write(Data("snapshot: \(error)\n".utf8))
         exit(1)
     }
+}
+// --- snapshot: the AppKit views rendered windowless via cacheDisplay --
+
+@MainActor
+private func renderAppKitSnapshot(to path: String) {
+    let states = OrbState.allCases
+    // three clock multipliers so one pass catches several morph phases
+    let speeds: [Double] = [1, 0.37, 0.13]
+    let rowH = 88.0
+    let root = FlippedView(frame: NSRect(x: 0, y: 0, width: 480, height: rowH * Double(states.count)))
+    root.wantsLayer = true
+    root.layer?.backgroundColor = CGColor(gray: 0.09, alpha: 1)
+
+    for (i, state) in states.enumerated() {
+        let y = Double(i) * rowH + 12
+        for (j, s) in speeds.enumerated() {
+            let v64 = ThinkingOrbView(state: state, orbSize: .px64, theme: .dark, speed: s)
+            v64.frame = NSRect(x: 20 + Double(j) * 84, y: y, width: 64, height: 64)
+            root.addSubview(v64)
+            let v20 = ThinkingOrbView(state: state, orbSize: .px20, theme: .dark, speed: s)
+            v20.frame = NSRect(x: 300 + Double(j) * 40, y: y + 22, width: 20, height: 20)
+            root.addSubview(v20)
+        }
+    }
+
+    guard let rep = root.bitmapImageRepForCachingDisplay(in: root.bounds) else {
+        FileHandle.standardError.write(Data("snapshot: no bitmap rep\n".utf8))
+        exit(1)
+    }
+    root.cacheDisplay(in: root.bounds, to: rep)
+    guard let png = rep.representation(using: .png, properties: [:]) else {
+        FileHandle.standardError.write(Data("snapshot: PNG encode failed\n".utf8))
+        exit(1)
+    }
+    let url = URL(fileURLWithPath: path.hasSuffix(".png") ? path : path + ".png")
+    do {
+        try png.write(to: url)
+        print("wrote \(url.path)")
+    } catch {
+        FileHandle.standardError.write(Data("snapshot: \(error)\n".utf8))
+        exit(1)
+    }
+}
+
+private final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
 }
 #else
 @main

@@ -2,7 +2,8 @@
 // wave (listening). All draw a lat/long dot field with mode-specific
 // motion, then hand off to the shared z-sorted painter.
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
 // --- the shared solver heartbeat (rubik) ------------------------------
 // Rapid eased moves scramble, then replay in reverse (palindrome) so
@@ -122,7 +123,7 @@ let drawGlobe: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(&ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
 }
 
 // --- Rubik: bands twist in quarter turns, scramble → solve — solving --
@@ -158,7 +159,7 @@ let drawRubik: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(&ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
 }
 
 // --- Wave: a waveform rolls through the rings — listening -------------
@@ -195,5 +196,5 @@ let drawWave: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(&ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
 }

@@ -12,9 +12,6 @@ import SwiftUI
 /// ThinkingOrb(state: .searching, size: .px20)   // 20pt inline orb
 /// ```
 public struct ThinkingOrb: View {
-    /// Shared epoch so simultaneously mounted orbs animate in phase.
-    private static let epoch = Date()
-
     private let state: OrbState
     private let size: OrbSize
     private let theme: OrbTheme
@@ -55,8 +52,10 @@ public struct ThinkingOrb: View {
         TimelineView(.animation(minimumInterval: nil, paused: still)) { timeline in
             Canvas { ctx, _ in
                 // reduced motion → one static, deterministic frame
-                let t = reduceMotion ? 0.6 : timeline.date.timeIntervalSince(Self.epoch) * effSpeed
-                resolved.mode.draw(&ctx, px, t, dark, resolved.opts)
+                let t = reduceMotion ? 0.6 : timeline.date.timeIntervalSince(orbEpoch) * effSpeed
+                ctx.withCGContext { cg in
+                    resolved.mode.draw(cg, px, t, dark, resolved.opts)
+                }
             }
         }
         .frame(width: px, height: px)
@@ -87,7 +86,9 @@ public struct ThinkingOrbFrame: View {
         let px = Double(size.rawValue)
         let dark = theme == .auto ? colorScheme == .dark : theme == .dark
         Canvas { ctx, _ in
-            resolved.mode.draw(&ctx, px, time * resolved.speed, dark, resolved.opts)
+            ctx.withCGContext { cg in
+                resolved.mode.draw(cg, px, time * resolved.speed, dark, resolved.opts)
+            }
         }
         .frame(width: px, height: px)
     }

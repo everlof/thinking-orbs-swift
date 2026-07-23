@@ -2,7 +2,8 @@
 // (the tuned preset runs coreless): just ghost paths and the particles
 // doing the work.
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
 let drawOrbits: ModeDraw = { ctx, size, t, dark, o in
     let cx = size / 2
@@ -71,5 +72,5 @@ let drawOrbits: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(&ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
 }

@@ -5,7 +5,8 @@
 // dots EVENLY along the blended outline — spacing stays uniform at
 // every instant of the morph, holds and transitions alike.
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
 private typealias ShapePath = (Double) -> (Double, Double)
 
@@ -126,5 +127,5 @@ let drawMorph: ModeDraw = { ctx, size, t, dark, o in
             white: 0.1
         ))
     }
-    paint(&ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
 }
