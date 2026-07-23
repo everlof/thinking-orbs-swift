@@ -87,7 +87,7 @@ private func makeMoves(_ count: Int) -> [Move] {
 
 // --- Globe: lat/long field, a scan meridian sweeps — searching --------
 
-let drawGlobe: ModeDraw = { ctx, size, t, dark, o in
+let drawGlobe: ModeDraw = { ctx, size, t, dark, o, tint in
     let spin = 0.5
     let cx = size / 2
     let cy = size / 2
@@ -123,12 +123,12 @@ let drawGlobe: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3, tint: tint)
 }
 
 // --- Rubik: bands twist in quarter turns, scramble → solve — solving --
 
-let drawRubik: ModeDraw = { ctx, size, t, dark, o in
+let drawRubik: ModeDraw = { ctx, size, t, dark, o, tint in
     let cx = size / 2
     let cy = size / 2
     let R = (size / 2) * 0.82
@@ -159,12 +159,12 @@ let drawRubik: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3, tint: tint)
 }
 
 // --- Wave: a waveform rolls through the rings — listening -------------
 
-let drawWave: ModeDraw = { ctx, size, t, dark, o in
+let drawWave: ModeDraw = { ctx, size, t, dark, o, tint in
     let cx = size / 2
     let cy = size / 2
     // 0.76 base × 1.15 — the undulation pulls the sphere inward, so wave read
@@ -196,5 +196,5 @@ let drawWave: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3, tint: tint)
 }

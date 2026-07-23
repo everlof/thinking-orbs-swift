@@ -5,7 +5,7 @@
 import CoreGraphics
 import Foundation
 
-let drawRibbon: ModeDraw = { ctx, size, t, dark, o in
+let drawRibbon: ModeDraw = { ctx, size, t, dark, o, tint in
     let cx = size / 2
     let cy = size / 2
     let R = (size / 2) * 0.78
@@ -65,5 +65,5 @@ let drawRibbon: ModeDraw = { ctx, size, t, dark, o in
             ))
         }
     }
-    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3, tint: tint)
 }

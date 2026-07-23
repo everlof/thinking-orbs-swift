@@ -44,6 +44,13 @@ public final class ThinkingOrbView: NSView {
         didSet { needsDisplay = true }
     }
 
+    /// Ink colour. `nil` keeps the grayscale ink that follows `theme`; a
+    /// colour drives the whole mark from one hue, depth carried on opacity,
+    /// so the orb can match a host app's accent instead of black-on-white.
+    public var tint: CGColor? {
+        didSet { needsDisplay = true }
+    }
+
     /// Animation speed multiplier on top of the preset's baked speed.
     public var speed: Double {
         didSet { needsDisplay = true }
@@ -204,7 +211,7 @@ public final class ThinkingOrbView: NSView {
         let t = reduceMotion ? 0.6 : Date().timeIntervalSince(orbEpoch) * resolved.speed * speed
         cg.saveGState()
         cg.translateBy(x: (bounds.width - px) / 2, y: (bounds.height - px) / 2)
-        resolved.mode.draw(cg, px, t, dark, resolved.opts)
+        resolved.mode.draw(cg, px, t, dark, resolved.opts, tint)
         cg.restoreGState()
     }
 }

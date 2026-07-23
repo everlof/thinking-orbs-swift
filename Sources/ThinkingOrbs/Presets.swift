@@ -60,7 +60,7 @@ enum ModeKey: String {
     }
 }
 
-typealias ModeDraw = (_ cg: CGContext, _ size: Double, _ t: Double, _ dark: Bool, _ o: ModeOpts) -> Void
+typealias ModeDraw = (_ cg: CGContext, _ size: Double, _ t: Double, _ dark: Bool, _ o: ModeOpts, _ tint: CGColor?) -> Void
 
 let stateToMode: [OrbState: ModeKey] = [
     .working: .orbits,

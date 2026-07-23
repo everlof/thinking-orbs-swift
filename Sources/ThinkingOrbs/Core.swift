@@ -58,19 +58,50 @@ func makeProj(yaw: Double, tilt: Double, cx: Double, cy: Double, scale: Double) 
     }
 }
 
-/// Painter: z-sort far→near, matte grayscale dots. On dark substrates the
-/// ink value is mirrored (1 - white) so near dots read bright — the same
-/// depth language on an inverted substrate.
-func paint(_ cg: CGContext, _ dots: inout [Dot], dark: Bool, rMin: Double = 0.3) {
+/// Painter: z-sort far→near, matte dots. On dark substrates the ink value
+/// is mirrored (1 - white) so near dots read bright — the same depth
+/// language on an inverted substrate.
+///
+/// A `tint` colours the ink instead of leaving it grayscale. Depth then
+/// rides on opacity rather than luminance: a dot's visibility against its
+/// own ground is `1 - white` whichever substrate it sits on (grayscale
+/// resolves to `dark ? 1 - w : w`, and a dot is visible in proportion to
+/// its distance from the ground either way), so a tinted orb reads the
+/// same in light and dark — only in the accent's hue. That is what lets a
+/// caller drive the whole mark from one theme colour.
+func paint(_ cg: CGContext, _ dots: inout [Dot], dark: Bool, rMin: Double = 0.3, tint: CGColor? = nil) {
+    let ink = tint.map(srgbComponents)
     dots.sort { $0.z < $1.z }
     for d in dots {
         if d.a < 0.02 { continue }
         let w = min(1, max(0, d.white))
-        let g = dark ? 1 - w : w
-        cg.setFillColor(CGColor(srgbRed: g, green: g, blue: g, alpha: d.a))
+        if let ink {
+            // `1 - w` is the depth cue the grayscale path spends on luminance;
+            // a coloured ink spends it on alpha and keeps the hue constant.
+            let visibility = 1 - w
+            cg.setFillColor(CGColor(srgbRed: ink.r, green: ink.g, blue: ink.b, alpha: d.a * visibility * ink.a))
+        } else {
+            let g = dark ? 1 - w : w
+            cg.setFillColor(CGColor(srgbRed: g, green: g, blue: g, alpha: d.a))
+        }
         let r = max(rMin, d.r)
         cg.fillEllipse(in: CGRect(x: d.x - r, y: d.y - r, width: r * 2, height: r * 2))
     }
+}
+
+/// A colour's sRGB components, converting from whatever space it arrived in
+/// so an accent handed over in a device or catalog space still reads. Falls
+/// back to treating a lone component as grey, then to opaque black.
+func srgbComponents(_ color: CGColor) -> (r: Double, g: Double, b: Double, a: Double) {
+    if let converted = color.converted(to: CGColorSpaceCreateDeviceRGB(), intent: .defaultIntent, options: nil),
+       let c = converted.components, c.count >= 4 {
+        return (Double(c[0]), Double(c[1]), Double(c[2]), Double(c[3]))
+    }
+    if let c = color.components, let first = c.first {
+        let g = Double(first)
+        return (g, g, g, Double(color.alpha))
+    }
+    return (0, 0, 0, Double(color.alpha))
 }
 
 /// Dot radii were tuned for a 300pt frame; sub-linear scaling keeps small

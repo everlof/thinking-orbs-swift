@@ -67,7 +67,7 @@ private let hold = 1.4
 private let morphDur = 0.9
 private let seg = hold + morphDur
 
-let drawMorph: ModeDraw = { ctx, size, t, dark, o in
+let drawMorph: ModeDraw = { ctx, size, t, dark, o, tint in
     let K = cycle.count
     let tc = t.truncatingRemainder(dividingBy: seg * Double(K))
     let k = Int(tc / seg)
@@ -127,5 +127,5 @@ let drawMorph: ModeDraw = { ctx, size, t, dark, o in
             white: 0.1
         ))
     }
-    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3)
+    paint(ctx, &dots, dark: dark, rMin: o["rMin"] ?? 0.3, tint: tint)
 }

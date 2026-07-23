@@ -54,7 +54,7 @@ public struct ThinkingOrb: View {
                 // reduced motion → one static, deterministic frame
                 let t = reduceMotion ? 0.6 : timeline.date.timeIntervalSince(orbEpoch) * effSpeed
                 ctx.withCGContext { cg in
-                    resolved.mode.draw(cg, px, t, dark, resolved.opts)
+                    resolved.mode.draw(cg, px, t, dark, resolved.opts, nil)
                 }
             }
         }
@@ -87,7 +87,7 @@ public struct ThinkingOrbFrame: View {
         let dark = theme == .auto ? colorScheme == .dark : theme == .dark
         Canvas { ctx, _ in
             ctx.withCGContext { cg in
-                resolved.mode.draw(cg, px, time * resolved.speed, dark, resolved.opts)
+                resolved.mode.draw(cg, px, time * resolved.speed, dark, resolved.opts, nil)
             }
         }
         .frame(width: px, height: px)
