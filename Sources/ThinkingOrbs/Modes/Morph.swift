@@ -67,6 +67,11 @@ private let hold = 1.4
 private let morphDur = 0.9
 private let seg = hold + morphDur
 
+// This state was tuned behind a blur + threshold "goo" filter. We draw
+// plain circles because browser-style filters are not portable to both Swift
+// front ends. The geometry is unchanged; do not shrink the radius to
+// compensate for the slightly softer antialiased edge.
+
 let drawMorph: ModeDraw = { ctx, size, t, dark, o, tint in
     let K = cycle.count
     let tc = t.truncatingRemainder(dividingBy: seg * Double(K))

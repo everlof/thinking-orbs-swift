@@ -15,12 +15,15 @@ private let countPairs: [(String, String)] = [
     ("rings", "lonDensity"),
     ("lanes", "segs")
 ]
-private let countKeys = ["orbitN", "ghostN"]
+private let countKeys = ["orbitN", "ghostN", "nodeN", "strandN", "signals"]
 private let iconDensityKeys = ["iconD"]
 
 // Every key that sets a dot's rendered radius — scaling all of them keeps
 // a dot's near/far falloff intact while shrinking or growing the mark.
-private let radiusKeys = ["rBase", "rDepth", "rActive", "rDot", "ghostR", "partR", "partRDepth"]
+private let radiusKeys = [
+    "rBase", "rDepth", "rActive", "rDot", "ghostR", "partR", "partRDepth",
+    "nodeR", "nodeRDepth"
+]
 
 func scaleCounts(_ opts: ModeOpts, _ scale: Double) -> ModeOpts {
     var out = opts
@@ -35,7 +38,9 @@ func scaleCounts(_ opts: ModeOpts, _ scale: Double) -> ModeOpts {
         }
     }
     for k in countKeys {
-        if let v = out[k], !done.contains(k) {
+        // Zero means the mode opted out of that layer entirely (ring has no
+        // ghost sphere) — scaling must not resurrect it as a stray dot.
+        if let v = out[k], v != 0, !done.contains(k) {
             out[k] = max(1, jsRound(v * scale))
         }
     }
@@ -104,10 +109,41 @@ let baseProfiles: [String: ModeOpts] = [
         "rsPow": 0.6,
         "rMin": 0.3
     ],
+    "web": [
+        "nodeN": 30,
+        "thr": 0.72,
+        "signals": 5,
+        "nodeR": 1.4,
+        "nodeRDepth": 1.8,
+        "lineW": 0.8,
+        "rsPow": 0.6,
+        "rMin": 0.3
+    ],
+    "braid": [
+        "strandN": 52,
+        "turns": 3,
+        "ghostN": 150,
+        "rBase": 1.2,
+        "rDepth": 1.8,
+        "rsPow": 0.6,
+        "rMin": 0.3
+    ],
     "ribbon": [
         "lanes": 5,
         "segs": 88,
         "ghostN": 150,
+        "rBase": 1.1,
+        "rDepth": 1.7,
+        "rsPow": 0.6,
+        "rMin": 0.3
+    ],
+    // Ring shares ribbon's painter. `faceOn` cancels the camera tilt and
+    // moves the undulation onto the radius; no ghost sphere sits behind it.
+    "ring": [
+        "lanes": 5,
+        "segs": 88,
+        "ghostN": 0,
+        "faceOn": 1,
         "rBase": 1.1,
         "rDepth": 1.7,
         "rsPow": 0.6,

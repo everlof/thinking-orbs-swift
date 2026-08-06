@@ -1,19 +1,22 @@
-// The shipped tunings: six states × two sizes, ported verbatim from the
+// The shipped tunings: nine states × two sizes, ported verbatim from the
 // upstream tuning session. `count`/`size` are multipliers over the base
 // fine profiles; `speed` multiplies the shared clock.
 
 import CoreGraphics
 import Foundation
 
-/// The six shipped states — each a hand-tuned animation:
-/// - `working`   — particles on tilted orbits
-/// - `searching` — a scan meridian sweeps a dotted globe
-/// - `solving`   — bands scramble in quarter turns, then click back
-/// - `listening` — a waveform rolls through latitude rings
-/// - `composing` — an undulating multi-band sash
-/// - `shaping`   — a dotted outline morphs circle → triangle → square
+/// The nine shipped states — each a hand-tuned animation:
+/// - `working`    — particles on tilted orbits
+/// - `searching`  — a scan meridian sweeps a dotted globe
+/// - `solving`    — bands scramble in quarter turns, then click back
+/// - `listening`  — a waveform rolls through latitude rings
+/// - `connecting` — a constellation wires itself, packets running the edges
+/// - `weaving`    — three strands plait around the sphere
+/// - `composing`  — an undulating multi-band sash
+/// - `breathing`  — a face-on ring slowly morphing
+/// - `shaping`    — a dotted outline morphs circle → triangle → square
 public enum OrbState: String, CaseIterable, Sendable {
-    case working, searching, solving, listening, composing, shaping
+    case working, searching, solving, listening, connecting, weaving, composing, breathing, shaping
 
     /// Human-readable label, used as the orb's accessibility label.
     public var label: String {
@@ -22,7 +25,10 @@ public enum OrbState: String, CaseIterable, Sendable {
         case .searching: return "Searching…"
         case .solving: return "Solving…"
         case .listening: return "Listening…"
+        case .connecting: return "Connecting…"
+        case .weaving: return "Weaving…"
         case .composing: return "Composing…"
+        case .breathing: return "Breathing…"
         case .shaping: return "Shaping…"
         }
     }
@@ -46,7 +52,7 @@ public enum OrbTheme: Sendable {
 }
 
 enum ModeKey: String {
-    case orbits, globe, rubik, wave, ribbon, morph
+    case orbits, globe, rubik, wave, web, braid, ribbon, ring, morph
 
     var draw: ModeDraw {
         switch self {
@@ -54,7 +60,9 @@ enum ModeKey: String {
         case .globe: return drawGlobe
         case .rubik: return drawRubik
         case .wave: return drawWave
-        case .ribbon: return drawRibbon
+        case .web: return drawWeb
+        case .braid: return drawBraid
+        case .ribbon, .ring: return drawRibbon
         case .morph: return drawMorph
         }
     }
@@ -67,7 +75,10 @@ let stateToMode: [OrbState: ModeKey] = [
     .searching: .globe,
     .solving: .rubik,
     .listening: .wave,
+    .connecting: .web,
+    .weaving: .braid,
     .composing: .ribbon,
+    .breathing: .ring,
     .shaping: .morph
 ]
 
@@ -96,12 +107,24 @@ private let presets: [ModeKey: [OrbSize: Preset]] = [
         .px64: Preset(speed: 4.388, count: 0.341, size: 1),
         .px20: Preset(speed: 3.998, count: 0.105, size: 1.6)
     ],
+    .web: [
+        .px64: Preset(speed: 3.315, count: 1.35, size: 0.95),
+        .px20: Preset(speed: 6.63, count: 0.25, size: 1.52)
+    ],
+    .braid: [
+        .px64: Preset(speed: 1.625, count: 0.5, size: 1),
+        .px20: Preset(speed: 2.75, count: 0.1125, size: 1.36)
+    ],
     .ribbon: [
         .px64: Preset(speed: 2.34, count: 0.25, size: 0.85, extra: ["spin": 0, "bandMul": 3.9, "wobMul": 1]),
         .px20: Preset(speed: 3.12, count: 0.051, size: 1.073, extra: ["spin": 0, "bandMul": 4.94, "wobMul": 1])
     ],
+    .ring: [
+        .px64: Preset(speed: 3.24, count: 0.25, size: 0.956, extra: ["spin": 0, "bandMul": 3.627, "wobMul": 0.368]),
+        .px20: Preset(speed: 3.78, count: 0.028, size: 1.622, extra: ["spin": 0, "bandMul": 3.968, "wobMul": 0.565])
+    ],
     .morph: [
-        .px64: Preset(speed: 2.405, count: 0.54, size: 0.395, extra: ["spread": 1.45]),
+        .px64: Preset(speed: 2.405, count: 0.702, size: 0.395, extra: ["spread": 1.45]),
         .px20: Preset(speed: 2.08, count: 0.53, size: 1.011, extra: ["spread": 1.45])
     ]
 ]

@@ -1,6 +1,9 @@
 // Ribbon: an undulating sash of parallel strands rides a great circle —
 // the "composing" state. The tuned preset freezes the 3D tumble
 // (spin 0), leaving the traveling undulation on a fixed band.
+//
+// The same painter drives "breathing" via `faceOn`: a face-on circle
+// whose radius — not its out-of-plane offset — undulates.
 
 import CoreGraphics
 import Foundation
@@ -12,7 +15,9 @@ let drawRibbon: ModeDraw = { ctx, size, t, dark, o, tint in
     // spin scales the 3D tumble; spin=0 freezes the band's orientation,
     // leaving only the traveling undulation
     let spin = o["spin"] ?? 1
-    let pt = makeProj(yaw: t * 0.1 * spin, tilt: 0.3, cx: cx, cy: cy, scale: 1)
+    let faceOn = (o["faceOn"] ?? 0) != 0
+    let cameraTilt = 0.3
+    let pt = makeProj(yaw: t * 0.1 * spin, tilt: cameraTilt, cx: cx, cy: cy, scale: 1)
     let rs = radiusScale(size, o["rsPow"] ?? 0.6)
 
     var dots: [Dot] = []
@@ -24,9 +29,12 @@ let drawRibbon: ModeDraw = { ctx, size, t, dark, o, tint in
         dots.append(Dot(x: px, y: py, z: z, r: 0.8 * rs, white: 0.78, a: 0.1 + 0.22 * depth))
     }
 
-    // the band plane, precessing (frozen when spin=0)
+    // The band plane, precessing (frozen when spin=0). Face-on cancels
+    // the camera tilt so the great circle projects as a true circle.
     let ya = t * 0.24 * spin
-    let ta = 0.55 + 0.3 * sin(t * 0.18) * spin
+    let ta = faceOn
+        ? -cameraTilt
+        : 0.55 + 0.3 * sin(t * 0.18) * spin
     let ux = cos(ya)
     let uy = 0.0
     let uz = sin(ya)
@@ -37,6 +45,13 @@ let drawRibbon: ModeDraw = { ctx, size, t, dark, o, tint in
     let nx = uy * vz - uz * vy
     let ny = uz * vx - ux * vz
     let nz = ux * vy - uy * vx
+
+    // Radial lobes swell past R, so pull the face-on base inward by most
+    // of the amplitude. The silhouette stays framed as deformation grows.
+    let wobbleAmplitude = 0.23 * (o["wobMul"] ?? 1)
+    let baseRadius = faceOn
+        ? R / (1 + 0.85 * wobbleAmplitude)
+        : R
 
     let baseLanes = o["lanes"] ?? 5
     let segs = Int(o["segs"] ?? 88)
@@ -50,12 +65,16 @@ let drawRibbon: ModeDraw = { ctx, size, t, dark, o, tint in
             // scales the deformation — 0 is a clean band
             let wob = (0.16 * sin(a * 3 - t * 1.7 + Double(w) * 0.22)
                 + 0.07 * sin(a * 5 + t * 1.1)) * (o["wobMul"] ?? 1)
-            let off = laneOff + wob
+            // Normal wobble becomes inward-only after sphere normalization.
+            // Face-on instead varies the in-plane radius for visible lobes.
+            let radial = faceOn ? 1 + wob : 1
+            let off = faceOn ? laneOff : laneOff + wob
             let x = ux * cos(a) + vx * sin(a) + nx * off
             let y = uy * cos(a) + vy * sin(a) + ny * off
             let z = uz * cos(a) + vz * sin(a) + nz * off
             let l = (x * x + y * y + z * z).squareRoot()
-            let (px, py, zr) = pt((x / l) * R, (y / l) * R, (z / l) * R)
+            let radius = baseRadius * radial
+            let (px, py, zr) = pt((x / l) * radius, (y / l) * radius, (z / l) * radius)
             let depth = (zr / R + 1) / 2
             dots.append(Dot(
                 x: px, y: py, z: zr,

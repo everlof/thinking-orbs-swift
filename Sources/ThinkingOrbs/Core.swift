@@ -21,7 +21,42 @@ struct Dot {
     var a: Double = 1
 }
 
+/// A stroked edge between two projected points (the `connecting` web).
+struct Line {
+    var x1: Double
+    var y1: Double
+    var x2: Double
+    var y2: Double
+    /// Ink value, same convention as `Dot.white`.
+    var white: Double
+    var a: Double = 1
+    var w: Double
+}
+
 typealias Projector = (Double, Double, Double) -> (Double, Double, Double)
+
+func lerp(_ a: Double, _ b: Double, _ f: Double) -> Double {
+    a + (b - a) * f
+}
+
+func frac(_ x: Double) -> Double {
+    x - floor(x)
+}
+
+/// Value noise on a 2-D lattice — smooth, deterministic, cheap.
+func vnoise(_ x: Double, _ y: Double) -> Double {
+    let xi = floor(x)
+    let yi = floor(y)
+    var fx = x - xi
+    var fy = y - yi
+    fx = fx * fx * (3 - 2 * fx)
+    fy = fy * fy * (3 - 2 * fy)
+    let a = hashD(xi, yi)
+    let b = hashD(xi + 1, yi)
+    let c = hashD(xi, yi + 1)
+    let d = hashD(xi + 1, yi + 1)
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy
+}
 
 /// Deterministic hash in [0, 1).
 func hashD(_ a: Double, _ b: Double) -> Double {
@@ -86,6 +121,38 @@ func paint(_ cg: CGContext, _ dots: inout [Dot], dark: Bool, rMin: Double = 0.3,
         }
         let r = max(rMin, d.r)
         cg.fillEllipse(in: CGRect(x: d.x - r, y: d.y - r, width: r * 2, height: r * 2))
+    }
+}
+
+/// Stroke pass for edge-based modes. Runs before `paint` so nodes sit on top.
+/// The optional tint follows the same depth-as-opacity rule as dotted ink.
+func paintLines(_ cg: CGContext, _ lines: [Line], dark: Bool, tint: CGColor? = nil) {
+    let ink = tint.map(srgbComponents)
+    for line in lines {
+        if line.a < 0.02 { continue }
+        let white = min(1, max(0, line.white))
+        if let ink {
+            let visibility = 1 - white
+            cg.setStrokeColor(CGColor(
+                srgbRed: ink.r,
+                green: ink.g,
+                blue: ink.b,
+                alpha: line.a * visibility * ink.a
+            ))
+        } else {
+            let grey = dark ? 1 - white : white
+            cg.setStrokeColor(CGColor(
+                srgbRed: grey,
+                green: grey,
+                blue: grey,
+                alpha: line.a
+            ))
+        }
+        cg.setLineWidth(line.w)
+        cg.beginPath()
+        cg.move(to: CGPoint(x: line.x1, y: line.y1))
+        cg.addLine(to: CGPoint(x: line.x2, y: line.y2))
+        cg.strokePath()
     }
 }
 

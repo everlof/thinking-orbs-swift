@@ -8,7 +8,7 @@ TypeScript canvas implementation and draws into a `CGContext`, so both front
 ends render identical frames: SwiftUI via `Canvas` + `TimelineView`, AppKit
 via an `NSView` driven by a display link.
 
-![All six states at both sizes, light and dark](docs/orbs.png)
+![All nine states at both sizes, light and dark](docs/orbs.png)
 
 ## States
 
@@ -18,7 +18,10 @@ via an `NSView` driven by a display link.
 | `searching` | a scan meridian sweeps a dotted globe |
 | `solving` | bands scramble in quarter turns, then click back |
 | `listening` | a waveform rolls through latitude rings |
+| `connecting` | a constellation wires itself, packets running the edges |
+| `weaving` | three strands plait around the sphere |
 | `composing` | an undulating multi-band sash |
+| `breathing` | a face-on ring slowly morphing |
 | `shaping` | a dotted outline morphs circle → triangle → square |
 
 ## Usage
@@ -29,6 +32,7 @@ import ThinkingOrbs
 ThinkingOrb(state: .working)                    // 64pt chat-avatar orb
 ThinkingOrb(state: .searching, size: .px20)     // 20pt inline orb
 ThinkingOrb(state: .solving, theme: .dark)      // pin the palette
+ThinkingOrb(state: .connecting)                 // constellation + packets
 ThinkingOrb(state: .composing, speed: 1.5)      // speed multiplier
 ThinkingOrb(state: .shaping, paused: true)      // freeze on current frame
 ```
