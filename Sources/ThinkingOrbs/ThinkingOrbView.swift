@@ -1,7 +1,7 @@
 // The AppKit front end: an NSView drawing the same engine through
 // draw(_:). A display link (macOS 14+; 60Hz timer on 13) drives frames
-// and stops automatically while the view is windowless, hidden or in an
-// occluded window — the AppKit analogue of the original's
+// and stops automatically while the view is windowless, hidden, clipped out
+// of a scroll viewport, or in an occluded window — the AppKit analogue of the original's
 // IntersectionObserver + visibilitychange plumbing. Reduce Motion shows
 // the same static representative frame as the SwiftUI view.
 
@@ -58,12 +58,16 @@ public final class ThinkingOrbView: NSView {
 
     /// Freeze the animation on the current frame.
     public var paused: Bool {
-        didSet { updateRunning() }
+        didSet {
+            updateRunning()
+            needsDisplay = true
+        }
     }
 
     private var resolved: Resolved
     private var displayLink: Any? // CADisplayLink, stored untyped for macOS 13
     private var fallbackTimer: Timer?
+    private var liveScrollingAncestors: Set<ObjectIdentifier> = []
 
     public init(
         state: OrbState = .working,
@@ -136,6 +140,13 @@ public final class ThinkingOrbView: NSView {
                 object: window
             )
         }
+        followClipViews()
+        updateRunning()
+    }
+
+    public override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        followClipViews()
         updateRunning()
     }
 
@@ -154,20 +165,110 @@ public final class ThinkingOrbView: NSView {
         needsDisplay = true
     }
 
+    public override func layout() {
+        super.layout()
+        // A view can join a window with a zero frame and receive its real size only when Auto
+        // Layout runs. Re-check here so that case starts without waiting for a scroll event.
+        updateRunning()
+    }
+
     @objc private func occlusionChanged() {
         updateRunning()
     }
 
     @objc private func accessibilityOptionsChanged() {
         updateRunning()
+        needsDisplay = true
+    }
+
+    @objc private func clipViewBoundsChanged() {
+        updateRunning()
+    }
+
+    @objc private func liveScrollWillStart(_ notification: Notification) {
+        guard let scrollView = notification.object as? NSScrollView else { return }
+        liveScrollingAncestors.insert(ObjectIdentifier(scrollView))
+        updateRunning()
+    }
+
+    @objc private func liveScrollDidEnd(_ notification: Notification) {
+        guard let scrollView = notification.object as? NSScrollView else { return }
+        liveScrollingAncestors.remove(ObjectIdentifier(scrollView))
+        updateRunning()
+        needsDisplay = true
+    }
+
+    /// Follow every enclosing clip view, not just `enclosingScrollView`. A gallery or inspector
+    /// can put one scroll surface inside another; moving the outer clip does not change the
+    /// inner clip's bounds, but it can still take this view completely off screen.
+    private func followClipViews() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSView.boundsDidChangeNotification,
+            object: nil
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSScrollView.willStartLiveScrollNotification,
+            object: nil
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSScrollView.didEndLiveScrollNotification,
+            object: nil
+        )
+        liveScrollingAncestors.removeAll(keepingCapacity: true)
+
+        var ancestor = superview
+        while let view = ancestor {
+            if let clipView = view as? NSClipView {
+                clipView.postsBoundsChangedNotifications = true
+                NotificationCenter.default.addObserver(
+                    self,
+                    selector: #selector(clipViewBoundsChanged),
+                    name: NSView.boundsDidChangeNotification,
+                    object: clipView
+                )
+                if let scrollView = clipView.enclosingScrollView {
+                    NotificationCenter.default.addObserver(
+                        self,
+                        selector: #selector(liveScrollWillStart),
+                        name: NSScrollView.willStartLiveScrollNotification,
+                        object: scrollView
+                    )
+                    NotificationCenter.default.addObserver(
+                        self,
+                        selector: #selector(liveScrollDidEnd),
+                        name: NSScrollView.didEndLiveScrollNotification,
+                        object: scrollView
+                    )
+                }
+            }
+            ancestor = view.superview
+        }
     }
 
     private func updateRunning() {
-        let visible = window.map { $0.occlusionState.contains(.visible) } ?? false
-        let shouldRun = visible && !isHiddenOrHasHiddenAncestor && !paused && !reduceMotion
+        let windowIsVisible = window.map { $0.occlusionState.contains(.visible) } ?? false
+        let shouldRun = windowIsVisible
+            && hasVisibleDrawingArea
+            && !isHiddenOrHasHiddenAncestor
+            && liveScrollingAncestors.isEmpty
+            && !paused
+            && !reduceMotion
         if shouldRun { start() } else { stop() }
-        // draw at least one frame even when paused/offscreen
-        needsDisplay = true
+    }
+
+    /// `isHidden` says whether an ancestor participates in layout; `visibleRect` additionally
+    /// says whether an enclosing clip view can currently show a pixel of the result. Kept
+    /// internal so the host's regression test can pin the geometry without exposing profiler
+    /// state as product API.
+    var hasVisibleDrawingArea: Bool {
+        !visibleRect.isEmpty && bounds.intersects(visibleRect)
+    }
+
+    var isSuppressedForLiveScroll: Bool {
+        !liveScrollingAncestors.isEmpty
     }
 
     private func start() {
