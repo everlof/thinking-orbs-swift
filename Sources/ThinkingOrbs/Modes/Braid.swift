@@ -5,7 +5,16 @@
 import CoreGraphics
 import Foundation
 
-let drawBraid: ModeDraw = { context, size, time, dark, options, tint in
+let drawBraid: ModeDraw = renderBraid
+
+private func renderBraid(
+    _ context: CGContext,
+    _ size: Double,
+    _ time: Double,
+    _ dark: Bool,
+    _ options: ModeOpts,
+    _ tint: CGColor?
+) {
     let centerX = size / 2
     let centerY = size / 2
     let radius = (size / 2) * 0.76
