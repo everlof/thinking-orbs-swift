@@ -5,7 +5,7 @@ let package = Package(
     name: "ThinkingOrbs",
     platforms: [.iOS(.v15), .macOS(.v13)],
     products: [
-        .library(name: "ThinkingOrbs", targets: ["ThinkingOrbs"]),
+        .library(name: "ThinkingOrbs", type: .static, targets: ["ThinkingOrbs"]),
         .executable(name: "ThinkingOrbsDemo", targets: ["ThinkingOrbsDemo"])
     ],
     targets: [
