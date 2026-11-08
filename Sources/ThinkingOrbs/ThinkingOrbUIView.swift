@@ -129,9 +129,15 @@ public final class ThinkingOrbView: UIView {
         )
     }
 
+    #if compiler(>=6.2)
+    isolated deinit {
+        displayLink?.invalidate()
+    }
+    #else
     deinit {
         displayLink?.invalidate()
     }
+    #endif
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {

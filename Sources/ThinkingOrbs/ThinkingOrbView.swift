@@ -109,11 +109,19 @@ public final class ThinkingOrbView: NSView {
         )
     }
 
+    #if compiler(>=6.2)
+    isolated deinit {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
+        stop()
+    }
+    #else
     deinit {
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         NotificationCenter.default.removeObserver(self)
         stop()
     }
+    #endif
 
     // same coordinate language as the engine: origin top-left, y down
     public override var isFlipped: Bool { true }

@@ -5,7 +5,9 @@
 import CoreGraphics
 import Foundation
 
-let drawBraid: ModeDraw = renderBraid
+let drawBraid: ModeDraw = { context, size, time, dark, options, tint in
+    renderBraid(context, size, time, dark, options, tint)
+}
 
 private func renderBraid(
     _ context: CGContext,

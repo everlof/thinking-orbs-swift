@@ -8,7 +8,7 @@
 import CoreGraphics
 import Foundation
 
-private typealias ShapePath = (Double) -> (Double, Double)
+private typealias ShapePath = @Sendable (Double) -> (Double, Double)
 
 private func smoothE(_ x: Double) -> Double {
     x * x * (3 - 2 * x)
@@ -25,7 +25,7 @@ private func polyPath(_ verts: [(Double, Double)]) -> ShapePath {
         L.append(l)
         total += l
     }
-    return { f in
+    return { [total, L] f in
         var target = f * total
         var i = 0
         while target > L[i] && i < V - 1 {
